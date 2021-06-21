@@ -3,7 +3,7 @@ using System.Text;
 
 namespace LevelUpCSharp.Collections
 {
-    internal interface ISandwichesRack<TKind, TElement> : IEnumerable<TElement>
+    internal interface ISandwichesRack<in TKind, TElement> : IEnumerable<TElement>
     {
         void Add(TElement sandwich);
 

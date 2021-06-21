@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using LevelUpCSharp.Collections;
 using LevelUpCSharp.Helpers;
@@ -11,14 +12,14 @@ namespace LevelUpCSharp.Retail
     public class Retailer
     {
         private static Retailer _instance;
-        private readonly IDictionary<SandwichKind, Queue<Sandwich>> _lines;
+        private readonly ISandwichesRack<SandwichKind, Sandwich> _rack;
 
         protected Retailer(string name)
         {
             Name = name;
-            _lines = InitializeLines();
+            _rack = InitializeRack();
         }
-
+        
         public static Retailer Instance => _instance ?? (_instance = new Retailer("Build-in"));
 
         public event Action<PackingSummary> Packed;
@@ -28,12 +29,17 @@ namespace LevelUpCSharp.Retail
 
         public Result<Sandwich> Sell(SandwichKind kind)
         {
-            if (_lines.ContainsKey(kind) == false || _lines[kind].Count == 0)
+            var hasKind = _rack.Contains(kind);
+            
+            if (!hasKind)
             {
                 return Result<Sandwich>.Failed();
             }
+            
+            var sandwich = _rack.Get(kind);
 
-            var sandwich = _lines[kind].Dequeue();
+            new List<Sandwich>(_rack);
+
             OnPurchase(DateTimeOffset.Now, sandwich);
             return sandwich.ToSuccess();
         }
@@ -45,7 +51,7 @@ namespace LevelUpCSharp.Retail
             Dictionary<SandwichKind, int> sums = new Dictionary<SandwichKind, int>();
             foreach (var sandwich in package)
             {
-                _lines[sandwich.Kind].Enqueue(sandwich);
+                _rack.Add(sandwich);
 
                 if (sums.ContainsKey(sandwich.Kind) == false)
                 {
@@ -76,16 +82,9 @@ namespace LevelUpCSharp.Retail
             Purchase?.Invoke(time, product);
         }
 
-        private IDictionary<SandwichKind, Queue<Sandwich>> InitializeLines()
+        private ISandwichesRack<SandwichKind, Sandwich> InitializeRack()
         {
-            var result = new Dictionary<SandwichKind, Queue<Sandwich>>();
-
-            foreach (var sandwichKind in EnumHelper.GetValues<SandwichKind>())
-            {
-                result.Add(sandwichKind, new Queue<Sandwich>());
-            }
-
-            return result;
+            return new SandwichesRack();
         }
     }
 }

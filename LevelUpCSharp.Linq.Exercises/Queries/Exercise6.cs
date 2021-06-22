@@ -16,10 +16,10 @@ namespace LevelUpCSharp.Linq.Queries
 			// arrange
 			Company[] allCompanies = new Numbers(10).Select(x => new Company()).ToArray();
 			Company c1 = new Company() { Name = allCompanies[2].Name };
-
+            IEnumerable<Company> all = allCompanies;
 
 			// act, detect if the given company already exists depending on its name
-			bool containsComapany = allCompanies.Contains(c1);
+			bool containsComapany = all.Any(company => company.Name == c1.Name);
 
 			// assert
 			Assert.IsTrue(containsComapany);
@@ -34,7 +34,7 @@ namespace LevelUpCSharp.Linq.Queries
 			Company lastCompany = allCompanies[0];
 
 			// act, order all companies by their name
-			allCompanies.Sort();
+			allCompanies = allCompanies.OrderBy(company => company.Name).ToList();
 
 			// assert
 			Assert.AreEqual(lastCompany, allCompanies.Last());
@@ -57,7 +57,7 @@ namespace LevelUpCSharp.Linq.Queries
 					};
 
 			// act, return a list of distinct companies (key is the company name) 
-			IEnumerable<Company> filteredCompanies = allCompanies.Distinct();
+			IEnumerable<Company> filteredCompanies = allCompanies.Distinct(new MyCompanyComparer());
 
 			// assert
 			Assert.AreEqual(3, filteredCompanies.Count());
@@ -70,18 +70,12 @@ namespace LevelUpCSharp.Linq.Queries
 			List<Company> allCompanies = new Numbers(10).Select(x => new Company()).ToList();
 			allCompanies[1].Name = "ZZZ";
 			Company lastCompany = allCompanies[1];
+            var results = allCompanies.Select((company, index) => new {Company = company, Index = index})
+                .OrderBy(a => a.Company.Name).ToArray();
 
-			// act, order all companies by their name and remember the old index from the list
-			Dictionary<Company, int> oldIndexByCompany = new Dictionary<Company, int>();
-			for (int i = 0; i < allCompanies.Count; i++)
-			{
-				oldIndexByCompany.Add(allCompanies[i], i);
-			}
-			allCompanies.Sort();
-
-			// assert
-			Assert.AreEqual(lastCompany, allCompanies.Last());
-			Assert.AreEqual(1, oldIndexByCompany[allCompanies.Last()]);
+            // assert
+			Assert.AreEqual(lastCompany, results.Last().Company);
+			Assert.AreEqual(1, results.Last().Index);
 		}
 	}
 }

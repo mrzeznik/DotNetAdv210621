@@ -24,41 +24,31 @@ namespace LevelUpCSharp.Linq.Queries
 				}
 			}
 
-			// act, group the employees from the companies in important employees (salear > 2500)
-			// and not so important employees(salear <= 2500)
-			// for each group the min and the max salear should be retrieved
-			List<Employee> importantEmployees = new List<Employee>();
-			List<Employee> notImportantEmployees = new List<Employee>();
-			int minSalearImportant = int.MaxValue;
-			int minSalearNotImportant = int.MaxValue;
-			int maxSalearImportant = int.MinValue;
-			int maxSalearNotImportant = int.MinValue;
-			foreach (Company c in allCompanies)
-			{
-				foreach (Employee e in c.Employees)
-					if (e.Salear <= 2500)
-					{
-						notImportantEmployees.Add(e);
-						minSalearNotImportant = Math.Min(minSalearNotImportant, e.Salear);
-						maxSalearNotImportant = Math.Max(maxSalearNotImportant, e.Salear);
-					}
-					else
-					{
-						importantEmployees.Add(e);
-						minSalearImportant = Math.Min(minSalearImportant, e.Salear);
-						maxSalearImportant = Math.Max(maxSalearImportant, e.Salear);
-					}
-			}
+            var result = allCompanies.SelectMany(c => c.Employees)
+                .GroupBy(
+                    x => x.Salear > 2500,
+                    (importand, employees) =>
+                        new
+                        {
+                            IsImportand = importand,
+                            Employees = employees,
+                            MaxSalar = employees.Max(e => e.Salear),
+                            MinSalar = employees.Min(e => e.Salear),
+                        })
+                .OrderBy(x => x.IsImportand)
+                .ToArray();
 
+            // assert
+			Assert.IsFalse(result.First().Employees.Any(x => x.Salear <= 2500));
+            Assert.IsFalse(result.Last().Employees.Any(x => x.Salear > 2500));
 
-			// assert
-			Assert.Fail("group the data via linq");
-			Assert.IsFalse(notImportantEmployees.Exists(x => x.Salear > 2500));
+			/*
 			Assert.AreEqual(notImportantEmployees.Max(x => x.Salear), maxSalearNotImportant);
 			Assert.AreEqual(notImportantEmployees.Min(x => x.Salear), minSalearNotImportant);
 			Assert.IsFalse(importantEmployees.Exists(x => x.Salear <= 2500));
 			Assert.AreEqual(importantEmployees.Max(x => x.Salear), maxSalearImportant);
 			Assert.AreEqual(importantEmployees.Min(x => x.Salear), minSalearImportant);
+			*/
 		}
 
 	}

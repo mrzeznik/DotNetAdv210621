@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -10,9 +11,9 @@ namespace LevelUpCSharp.Production
 {
     public class Vendor
     {
-        private readonly List<Sandwich> _warehouse = new List<Sandwich>();
+        private readonly ConcurrentQueue<Sandwich> _warehouse = new ConcurrentQueue<Sandwich>();
 
-        private readonly List<PendingOrder> _orders = new List<PendingOrder>();
+        private readonly ConcurrentQueue<PendingOrder> _orders = new ConcurrentQueue<PendingOrder>();
 
         private readonly Thread _worker = null;
         private bool _ending = false;
@@ -30,28 +31,17 @@ namespace LevelUpCSharp.Production
 
         public IEnumerable<Sandwich> Buy(int howMuch = 0)
         {
-            var toSell = new List<Sandwich>();
-
-            lock (_warehouse)
+            if (howMuch == 0)
             {
-                if (_warehouse.Count == 0)
-                {
-                    return Array.Empty<Sandwich>();
-                }
+                howMuch = _warehouse.Count;
+            }
 
-                if (howMuch == 0 || _warehouse.Count <= howMuch)
-                {
-                    var result = _warehouse.ToArray();
-                    _warehouse.Clear();
-                    return result;
-                }
-
-                for (int i = 0; i < howMuch; i++)
-                {
-                    var first = _warehouse[0];
-                    toSell.Add(first);
-                    _warehouse.Remove(first);
-                } 
+            int index = 0;
+            var toSell = new List<Sandwich>();
+            while (_warehouse.TryDequeue(out var s) && howMuch > index)
+            {
+                toSell.Add(s);
+                index++;
             }
 
             return toSell;
@@ -59,10 +49,7 @@ namespace LevelUpCSharp.Production
 
         public void Order(SandwichKind kind, int count)
         {
-            lock (_orders)
-            {
-                _orders.Add(new PendingOrder(kind, count));
-            }
+            _orders.Enqueue(new PendingOrder(kind, count));
         }
 
         public IEnumerable<StockItem> GetStock()
@@ -158,21 +145,11 @@ namespace LevelUpCSharp.Production
             {
                 var sandwich = Produce(SandwichKind.Beef);
 
-                lock (_warehouse)
-                {
-                    _warehouse.Add(sandwich);
-                }
+                _warehouse.Enqueue(sandwich);
 
                 Produced?.Invoke(new[] { sandwich });
 
-                IEnumerable<PendingOrder> sideWork;
-                lock (_orders)
-                {
-                    sideWork = _orders.ToArray();
-                    _orders.Clear();
-                }
-
-                foreach (var pendingOrder in sideWork)
+                foreach (var pendingOrder in _orders)
                 {
                     var sandwiches = new List<Sandwich>();
 
@@ -180,10 +157,7 @@ namespace LevelUpCSharp.Production
                     {
                         sandwich = Produce(pendingOrder.Kind);
 
-                        lock (_warehouse)
-                        {
-                            _warehouse.Add(sandwich);
-                        }
+                        _warehouse.Enqueue(sandwich);
 
                         sandwiches.Add(sandwich);
                         Thread.Sleep(1 * 1000);

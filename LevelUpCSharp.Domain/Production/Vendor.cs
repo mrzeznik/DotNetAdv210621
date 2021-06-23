@@ -101,6 +101,9 @@ namespace LevelUpCSharp.Production
             IKeyIngredient main = kind switch
             {
                 SandwichKind.Cheese => new Cheese(),
+                SandwichKind.Beef => new PulledBeef(),
+                SandwichKind.Chicken => new GrilledChicken(),
+                SandwichKind.Pork => new Ham(),
             };
 
             var sandwichBuilder = new SandwichBuilder();

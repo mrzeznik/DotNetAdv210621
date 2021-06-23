@@ -46,29 +46,9 @@ namespace LevelUpCSharp.Retail
 
         public void Pack(IEnumerable<Sandwich> package, string deliver)
         {
-            /* use linq to create summary, see constructor for expectations */
-
-            Dictionary<SandwichKind, int> sums = new Dictionary<SandwichKind, int>();
-            foreach (var sandwich in package)
-            {
-                _rack.Add(sandwich);
-
-                if (sums.ContainsKey(sandwich.Kind) == false)
-                {
-                    sums.Add(sandwich.Kind, 0);
-                }
-
-                sums[sandwich.Kind]++;
-            }
-
-            var summaryPositions = new List<LineSummary>();
-
-            foreach (var pair in sums)
-            {
-                summaryPositions.Add(new LineSummary(pair.Key, pair.Value));
-            }
-
-            var summary = new PackingSummary(summaryPositions, deliver);
+            package = package.ToArray();
+            PopulateRack(package);
+            var summary = ComputeLabel(package, deliver);
             OnPacked(summary);
         }
 
@@ -85,6 +65,23 @@ namespace LevelUpCSharp.Retail
         private ISandwichesRack<SandwichKind, Sandwich> InitializeRack()
         {
             return new SandwichesRack();
+        }
+        
+        private void PopulateRack(IEnumerable<Sandwich> package)
+        {
+            package.ForEach(p => _rack.Add(p));
+        }
+
+        private static PackingSummary ComputeLabel(IEnumerable<Sandwich> package, string deliver)
+        {
+            var summaryPositions = package
+                .GroupBy(
+                    p => p.Kind,
+                    (kind, sandwiches) => new LineSummary(kind, sandwiches.Count()))
+                .ToArray();
+
+            var summary = new PackingSummary(summaryPositions, deliver);
+            return summary;
         }
     }
 }

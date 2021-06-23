@@ -4,7 +4,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
+using LevelUpCSharp.Collections;
 using LevelUpCSharp.Products;
 
 namespace LevelUpCSharp.Production
@@ -14,6 +17,8 @@ namespace LevelUpCSharp.Production
         private readonly ConcurrentQueue<Sandwich> _warehouse = new ConcurrentQueue<Sandwich>();
 
         private readonly ConcurrentQueue<PendingOrder> _orders = new ConcurrentQueue<PendingOrder>();
+
+        private static Random _generator = new Random();
 
         private readonly Thread _worker = null;
         private bool _ending = false;
@@ -143,32 +148,32 @@ namespace LevelUpCSharp.Production
         {
             while (_ending == false)
             {
-                var sandwich = Produce(SandwichKind.Beef);
-
-                _warehouse.Enqueue(sandwich);
-
-                Produced?.Invoke(new[] { sandwich });
-
-                foreach (var pendingOrder in _orders)
+                var orderPresent = _orders.TryDequeue(out PendingOrder order);
+                
+                if (!orderPresent)
                 {
-                    var sandwiches = new List<Sandwich>();
-
-                    for (int i = 0; i < pendingOrder.Amount; i++)
-                    {
-                        sandwich = Produce(pendingOrder.Kind);
-
-                        _warehouse.Enqueue(sandwich);
-
-                        sandwiches.Add(sandwich);
-                        Thread.Sleep(1 * 1000);
-                    }
-
-                    Produced?.Invoke(sandwiches.ToArray());
-
-                    Thread.Sleep(2 * 1000);
+                    order = new PendingOrder((SandwichKind)_generator.Next(1, 4), 10);
+                    _orders.Enqueue(order);
                 }
 
-                Thread.Sleep(5 * 1000);
+                var tasks = new Task<Sandwich>[order.Amount];
+
+                for (int a = 0; a < order.Amount; a++)
+                {
+                    var worker = new Task<Sandwich>(() => Produce(order.Kind));
+                    worker.Start();
+                    tasks[a] = worker;
+                }
+
+                Task.WaitAll(tasks);
+
+                var sandwiches = tasks.Select(task => task.Result).ToArray();
+
+                sandwiches.ForEach(sandwich => _warehouse.Enqueue(sandwich));
+
+                Produced?.Invoke(sandwiches);
+
+                Thread.Sleep(_generator.Next(1, 30) * 100);
             }
         }
     }

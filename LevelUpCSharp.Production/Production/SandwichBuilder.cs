@@ -8,41 +8,29 @@ namespace LevelUpCSharp.Production
 {
     public class SandwichBuilder : IStarter, IAdditionable, IToppingable, ISandwichBuilder
     {
-        private SandwichKind _type = SandwichKind.Cheese;
+        private SandwichKind _type;
 
         private readonly List<IIngredient> _ingredients = new List<IIngredient>(4);
         private bool _hasButter;
-        private int _extras;
-        private readonly int _maxExtras;
-
-        public SandwichBuilder(int maxExtras = 5)
-        {
-            _maxExtras = maxExtras;
-        }
 
         public Sandwich Wrap()
         {
             return new Sandwich(_type, DateTimeOffset.Now.AddHours(3), _ingredients.AsStrings().ToArray());
         }
 
-        public ISandwichBuilder Add(ITopping topping)
+        public ISandwichBuilder AddSos(ITopping topping)
         {
             _ingredients.Add(topping);
             return this;
         }
 
-        public IAdditionable AddExtra(IAddition ingredient)
+        public IAdditionable AddEstra(IAddition ingredient)
         {
-            if (_extras > _maxExtras)
-            {
-            }
-
-            _extras ++;
             _ingredients.Add(ingredient);
             return this;
         }
 
-        public IAdditionable Add(IKeyIngredient ingredient)
+        public IAdditionable AddMainIngredient(IKeyIngredient ingredient)
         {
             _type = ingredient.Kind;
             _ingredients.Add(ingredient);
@@ -113,13 +101,6 @@ namespace LevelUpCSharp.Production
         public SandwichKind Kind => SandwichKind.Cheese;
         public string Name => "cheese";
         public DateTimeOffset ExpirationDate => DateTimeOffset.Now.AddDays(10);
-    }
-
-    public class Fish : IKeyIngredient
-    {
-        public string Name { get; }
-        public DateTimeOffset ExpirationDate { get; }
-        public SandwichKind Kind { get; }
     }
     #endregion
 
@@ -202,16 +183,16 @@ namespace LevelUpCSharp.Production
 
     public interface IToppingable : ISandwichBuilder
     {
-        ISandwichBuilder Add(ITopping topping);
+        ISandwichBuilder AddSos(ITopping topping);
     }
 
     public interface IAdditionable : IToppingable, ISandwichBuilder
     {
-        IAdditionable AddExtra(IAddition addition);
+        IAdditionable AddEstra(IAddition addition);
     }
 
     public interface IStarter : IAdditionable, IToppingable, ISandwichBuilder
     {
-        IAdditionable Add(IKeyIngredient ingredient);
+        IAdditionable AddMainIngredient(IKeyIngredient ingredient);
     }
 }

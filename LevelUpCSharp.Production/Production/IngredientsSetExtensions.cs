@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace LevelUpCSharp.Production
 {
-    public static class IngredientExtensions
+    public static class IngredientsSetExtensions
     {
         public static IEnumerable<string> AsStrings(this List<IIngredient> source)
         {

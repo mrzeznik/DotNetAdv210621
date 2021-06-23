@@ -72,7 +72,7 @@ namespace LevelUpCSharp.Production
                 foreach (var sandwich in _warehouse)
                 {
                     counts[sandwich.Kind] += 1;
-                } 
+                }
             }
 
             var result = new StockItem[counts.Count];
@@ -115,20 +115,17 @@ namespace LevelUpCSharp.Production
 
             var sandwichBuilder = new SandwichBuilder();
             var sandwich = sandwichBuilder
-                .Add(main)
-                .AddExtra(new Cheese())
-                .AddExtra(new Olives())
-                .AddExtra(new Tomato())
-                .AddExtra(new Onion())
-                .AddExtra(new Onion())
-                .AddExtra(new Tomato())
-                .Add(new Mayo()).Wrap();
-
-            sandwichBuilder.Add(new Fish()).AddExtra(new Olives()).Wrap();
+                .AddMainIngredient(main)
+                .AddEstra(new Cheese())
+                .AddEstra(new Olives())
+                .AddEstra(new Tomato())
+                .AddEstra(new Onion())
+                .AddEstra(new Onion())
+                .AddEstra(new Tomato())
+                .AddSos(new Mayo())
+                .Wrap();
 
             return sandwich;
-
-            //return new Sandwich(kind, addMinutes);
         }
 
         private class PendingOrder
@@ -149,7 +146,7 @@ namespace LevelUpCSharp.Production
             while (_ending == false)
             {
                 var orderPresent = _orders.TryDequeue(out PendingOrder order);
-                
+
                 if (!orderPresent)
                 {
                     order = new PendingOrder((SandwichKind)_generator.Next(1, 4), 10);

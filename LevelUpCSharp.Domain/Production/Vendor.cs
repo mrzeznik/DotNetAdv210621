@@ -12,9 +12,16 @@ namespace LevelUpCSharp.Production
     {
         private readonly List<Sandwich> _warehouse = new List<Sandwich>();
 
+        private readonly List<PendingOrder> _orders = new List<PendingOrder>();
+
+        private readonly Thread _worker = null;
+        private bool _ending = false;
+
         public Vendor(string name)
         {
             Name = name;
+            _worker = new Thread(Production) { IsBackground = true };
+            _worker.Start();
         }
 
         public event Action<Sandwich[]> Produced;
@@ -23,24 +30,28 @@ namespace LevelUpCSharp.Production
 
         public IEnumerable<Sandwich> Buy(int howMuch = 0)
         {
-            if (_warehouse.Count == 0)
-            {
-                return Array.Empty<Sandwich>();
-            }
-
-            if (howMuch == 0 || _warehouse.Count <= howMuch)
-            {
-                var result = _warehouse.ToArray();
-                _warehouse.Clear();
-                return result;
-            }
-
             var toSell = new List<Sandwich>();
-            for (int i = 0; i < howMuch; i++)
+
+            lock (_warehouse)
             {
-                var first = _warehouse[0];
-                toSell.Add(first);
-                _warehouse.Remove(first);
+                if (_warehouse.Count == 0)
+                {
+                    return Array.Empty<Sandwich>();
+                }
+
+                if (howMuch == 0 || _warehouse.Count <= howMuch)
+                {
+                    var result = _warehouse.ToArray();
+                    _warehouse.Clear();
+                    return result;
+                }
+
+                for (int i = 0; i < howMuch; i++)
+                {
+                    var first = _warehouse[0];
+                    toSell.Add(first);
+                    _warehouse.Remove(first);
+                } 
             }
 
             return toSell;
@@ -48,13 +59,10 @@ namespace LevelUpCSharp.Production
 
         public void Order(SandwichKind kind, int count)
         {
-            var sandwiches = new List<Sandwich>();
-            for (int i = 0; i < count; i++)
+            lock (_orders)
             {
-                sandwiches.Add(Produce(kind));
+                _orders.Add(new PendingOrder(kind, count));
             }
-            _warehouse.AddRange(sandwiches);
-            Produced?.Invoke(sandwiches.ToArray());
         }
 
         public IEnumerable<StockItem> GetStock()
@@ -67,9 +75,12 @@ namespace LevelUpCSharp.Production
                 {SandwichKind.Pork, 0},
             };
 
-            foreach (var sandwich in _warehouse)
+            lock (_warehouse)
             {
-                counts[sandwich.Kind] += 1;
+                foreach (var sandwich in _warehouse)
+                {
+                    counts[sandwich.Kind] += 1;
+                } 
             }
 
             var result = new StockItem[counts.Count];
@@ -82,6 +93,10 @@ namespace LevelUpCSharp.Production
             }
 
             return result;
+        }
+        public void Dispose()
+        {
+            _ending = true;
         }
 
         private Sandwich Produce(SandwichKind kind)
@@ -122,6 +137,65 @@ namespace LevelUpCSharp.Production
             return sandwich;
 
             //return new Sandwich(kind, addMinutes);
+        }
+
+        private class PendingOrder
+        {
+            public PendingOrder(SandwichKind kind, int amount)
+            {
+                Kind = kind;
+                Amount = amount;
+            }
+
+            public SandwichKind Kind { get; }
+
+            public int Amount { get; }
+        }
+
+        private void Production()
+        {
+            while (_ending == false)
+            {
+                var sandwich = Produce(SandwichKind.Beef);
+
+                lock (_warehouse)
+                {
+                    _warehouse.Add(sandwich);
+                }
+
+                Produced?.Invoke(new[] { sandwich });
+
+                IEnumerable<PendingOrder> sideWork;
+                lock (_orders)
+                {
+                    sideWork = _orders.ToArray();
+                    _orders.Clear();
+                }
+
+                foreach (var pendingOrder in sideWork)
+                {
+                    var sandwiches = new List<Sandwich>();
+
+                    for (int i = 0; i < pendingOrder.Amount; i++)
+                    {
+                        sandwich = Produce(pendingOrder.Kind);
+
+                        lock (_warehouse)
+                        {
+                            _warehouse.Add(sandwich);
+                        }
+
+                        sandwiches.Add(sandwich);
+                        Thread.Sleep(1 * 1000);
+                    }
+
+                    Produced?.Invoke(sandwiches.ToArray());
+
+                    Thread.Sleep(2 * 1000);
+                }
+
+                Thread.Sleep(5 * 1000);
+            }
         }
     }
 }

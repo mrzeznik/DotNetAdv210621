@@ -156,6 +156,10 @@ namespace LevelUpCSharp.Production
                     _orders.Enqueue(order);
                 }
 
+                // substitute for lines till .ForEach usage
+                //var s = _orders.AsParallel().SelectMany(o => 
+                //    Enumerable.Range(0, order.Amount).AsParallel().Select(_ => Produce(order.Kind))).ToArray();
+
                 var tasks = new Task<Sandwich>[order.Amount];
 
                 for (int a = 0; a < order.Amount; a++)

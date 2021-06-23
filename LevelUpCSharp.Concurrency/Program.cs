@@ -5,6 +5,8 @@ namespace LevelUpCSharp.Concurrency
 {
     class Program
     {
+        private static readonly object _syncObject = new object();
+
         private static Random r = new Random();
 
         static void Main(string[] args)
@@ -29,19 +31,11 @@ namespace LevelUpCSharp.Concurrency
             {
                 var found = r.Next(100);
 
-                Console.WriteLine("[B] i have: " + found);
+                Console.WriteLine("[P] i have: " + found);
                 vault.Put(found);
-                Console.WriteLine("[B] stored: " + found);
+                Console.WriteLine("[P] stored: " + found);
 
-                Console.WriteLine("[B] break");
-                Thread.Sleep(3*1000);
-                Console.WriteLine("[B] after break");
-
-
-                var get = vault.Get();
-                Console.WriteLine("[B] get:" + get);
-
-                Thread.Sleep(3 * 1000);
+                Thread.Sleep(r.Next(1, 10) * 1000);
             }
         }
 
@@ -51,21 +45,11 @@ namespace LevelUpCSharp.Concurrency
 
             while (true)
             {
-                var found = r.Next(100);
-
-                Console.WriteLine("[A] i have: " + found);
-                vault.Put(found);
-                Console.WriteLine("[A] stored: " + found);
-
-                Console.WriteLine("[A] break");
-                Thread.Sleep(7 * 1000);
-                Console.WriteLine("[A] after break");
-                
-
+                Console.WriteLine("[C] wait");
                 var get = vault.Get();
-                Console.WriteLine("[A] get:" + get);
+                Console.WriteLine("[C] get:" + get);
 
-                Thread.Sleep(7 * 1000);
+                Thread.Sleep(r.Next(1, 10) * 1000);
             }
         }
     }

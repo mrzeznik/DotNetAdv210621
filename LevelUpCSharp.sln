@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LevelUpCSharp.Server", "Lev
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LevelUpCSharp.Production", "LevelUpCSharp.Production\LevelUpCSharp.Production.csproj", "{B42C20E4-87F1-4370-8BE7-16BF417FD05C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{56158473-9DF1-46FC-9F44-D9F594B165E7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,6 +56,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E4DA11ED-2649-46FF-BDF6-8CB0AD84053A} = {56158473-9DF1-46FC-9F44-D9F594B165E7}
+		{B42C20E4-87F1-4370-8BE7-16BF417FD05C} = {56158473-9DF1-46FC-9F44-D9F594B165E7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2B933B73-7702-4138-B9C6-D63A7A6E6A22}

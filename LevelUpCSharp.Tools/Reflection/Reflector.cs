@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace LevelUpCSharp.Reflection
@@ -10,12 +11,15 @@ namespace LevelUpCSharp.Reflection
     {
         public static IEnumerable<TypeInfo> FindByAttributes(Assembly assembly, params Type[] attributes)
         {
-            throw new NotImplementedException();
+            return assembly.DefinedTypes
+                .Where(type => type.CustomAttributes.Any(attr => attributes.Contains(attr.AttributeType)))
+                .ToArray();
         }
 
-        public static IEnumerable<MethodInfo> FindByAttributes(TypeInfo assembly, params Type[] attributes)
+        public static IEnumerable<MethodInfo> FindByAttributes(TypeInfo type, params Type[] attributes)
         {
-            throw new NotImplementedException();
+            return type.DeclaredMethods
+                .Where(method => method.CustomAttributes.Any(attr => attributes.Contains(attr.AttributeType))).ToArray();
         }
     }
 }

@@ -24,4 +24,21 @@ namespace LevelUpCSharp.Server
             return _vendors.SelectMany(v => v.Buy()).ToArray();
         }
     }
+
+    [Ctrl("r")]
+    internal class ProductionHandlerR
+    {
+        private readonly IEnumerable<Vendor> _vendors;
+
+        public ProductionHandlerR(IEnumerable<Vendor> vendors)
+        {
+            _vendors = vendors;
+        }
+
+        [Worker("s")]
+        public IEnumerable<Sandwich> Sandwiches()
+        {
+            return _vendors.First().Buy();
+        }
+    }
 }

@@ -28,6 +28,8 @@ namespace LevelUpCSharp.Server
         {
             var server = BuildServer();
 
+            _handlers = ScanForHandlers(Assembly.GetExecutingAssembly());
+            
             // Start listening for client requests.
             server.Start();
 
@@ -72,20 +74,31 @@ namespace LevelUpCSharp.Server
         {
             using (NetworkStream stream = client.GetStream())
             {
-
                 var cmd = ReadCommand(stream);
-
                 Console.WriteLine("Received: {0}", cmd);
-
-                var sandwiches = GetSandwiches();
-                
+                var parts = ParseCommand(cmd);
+                var sandwiches = ExecuteCommand(parts);
                 SendResponse(sandwiches, stream);
-
                 Console.WriteLine("Responsed");
             }
 
         }
-        
+
+        private static IEnumerable<Sandwich> ExecuteCommand(string[] parts)
+        {
+            var ctrl = _handlers[parts[0]];
+            var method = ctrl.Methods[parts[1]];
+            var instance = ConstructHandler(ctrl);
+            var sandwiches = (IEnumerable<Sandwich>) InvokeWorker(ctrl, method, instance);
+            return sandwiches;
+        }
+
+        private static string[] ParseCommand(string cmd)
+        {
+            var parts = cmd.Split('.');
+            return parts;
+        }
+
         private static string ReadCommand(NetworkStream stream)
         {
             Byte[] bytes = new Byte[256];
@@ -117,12 +130,12 @@ namespace LevelUpCSharp.Server
 
         private static object InvokeWorker(Route handler, string method, object instance)
         {
-            throw new NotImplementedException();
+            return handler.Type.GetMethod(method).Invoke(instance, null);
         }
 
         private static object ConstructHandler(Route handler)
         {
-            throw new NotImplementedException();
+            return Activator.CreateInstance(handler.Type, _vendors);
         }
 
         private static IDictionary<string, Route> ScanForHandlers(Assembly assembly)

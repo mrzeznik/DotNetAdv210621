@@ -22,13 +22,13 @@ namespace LevelUpCSharp.Retail
             Retailer.Instance.Packed += OnPacked;
             Retailer.Instance.Purchase += OnPurchase;
 
-            Pickup = new RelayCommand(OnPickup);
+            Pickup = new RelayCommand<string>(OnPickup);
 
         }
 
-        private void OnPickup()
+        private void OnPickup(string request)
         {
-            Retailer.Instance.Pickup();
+            Retailer.Instance.Pickup(request);
         }
 
         public ICommand Pickup { get; set; }

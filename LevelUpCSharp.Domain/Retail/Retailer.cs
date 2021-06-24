@@ -47,7 +47,7 @@ namespace LevelUpCSharp.Retail
             return sandwich.ToSuccess();
         }
 
-        public void Pickup()
+        public void Pickup(string request)
         {
             try
             {
@@ -57,7 +57,7 @@ namespace LevelUpCSharp.Retail
                 {
                     using (var stream = connection.GetStream())
                     {
-                        SendCommand(stream);
+                        SendCommand(stream, request);
 
                         sandwiches = ReadResponse(stream);
                     }
@@ -130,9 +130,9 @@ namespace LevelUpCSharp.Retail
             }
         }
 
-        private void SendCommand(NetworkStream stream)
+        private void SendCommand(NetworkStream stream, string request)
         {
-            var data = System.Text.Encoding.ASCII.GetBytes("s");
+            var data = System.Text.Encoding.ASCII.GetBytes(request);
             stream.Write(data, 0, data.Length);
         }
         #endregion
